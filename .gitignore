@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.user
+
+# QuickFIX runtime artifacts (stores e logs de sessão)
+fixstore/
+fixlog/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# IDE / SO
+.vs/
+.idea/
+.DS_Store
