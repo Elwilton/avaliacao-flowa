@@ -15,4 +15,5 @@ dist/
 # IDE / SO
 .vs/
 .idea/
+.claude/
 .DS_Store
