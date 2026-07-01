@@ -8,6 +8,8 @@ ordens e acompanhamento da exposição por símbolo.
 ![QuickFIXn](https://img.shields.io/badge/QuickFIXn-FIX%204.4-0A66C2)
 ![React](https://img.shields.io/badge/React-Vite%20%2B%20TypeScript-61DAFB)
 
+> This is a challenge by [Coodesh](https://coodesh.com/)
+
 ![Formulário do OrderGenerator](docs/images/form.png)
 
 ---
