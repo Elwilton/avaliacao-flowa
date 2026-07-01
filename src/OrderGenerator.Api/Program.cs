@@ -41,13 +41,16 @@ app.MapGet("/api/meta", () => Results.Ok(new
     sides = new[] { "Buy", "Sell" },
     maxQuantityExclusive = OrderValidator.MaxQuantityExclusive,
     maxPriceExclusive = OrderValidator.MaxPriceExclusive,
-    priceTick = OrderValidator.PriceTick
+    priceTick = OrderValidator.PriceTick,
+    exposureLimitPerSymbol = OrderValidator.ExposureLimitPerSymbol
 }));
 
 app.MapGet("/api/health", (FixGateway gateway) => Results.Ok(new
 {
     fixSessionReady = gateway.IsReady
 }));
+
+app.MapGet("/api/portfolio", (FixGateway gateway) => Results.Ok(gateway.GetPortfolio()));
 
 app.MapPost("/api/orders", async (OrderRequest request, FixGateway gateway, CancellationToken ct) =>
 {

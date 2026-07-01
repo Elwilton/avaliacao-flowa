@@ -8,6 +8,7 @@ public static class OrderValidator
     public const int MaxQuantityExclusive = 100_000;
     public const decimal MaxPriceExclusive = 1_000m;
     public const decimal PriceTick = 0.01m;
+    public const decimal ExposureLimitPerSymbol = 100_000_000m;
 
     public static bool TryValidate(OrderRequest request, out OrderSide side, out IReadOnlyList<string> errors)
     {

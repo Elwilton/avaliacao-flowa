@@ -11,12 +11,16 @@ public sealed class FixGateway : MessageCracker, IApplication
 {
     private readonly ILogger<FixGateway> _logger;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<OrderResult>> _pendingOrders = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, PortfolioEntry> _portfolio = new(StringComparer.Ordinal);
     private volatile SessionID? _sessionId;
     private long _clOrdIdSequence;
 
     public FixGateway(ILogger<FixGateway> logger) => _logger = logger;
 
     public bool IsReady => _sessionId is not null;
+
+    public IReadOnlyCollection<PortfolioEntry> GetPortfolio() =>
+        _portfolio.Values.OrderBy(e => e.Symbol, StringComparer.Ordinal).ToArray();
 
     public void OnCreate(SessionID sessionID) => _logger.LogInformation("Sessão criada: {Session}", sessionID);
 
@@ -117,8 +121,19 @@ public sealed class FixGateway : MessageCracker, IApplication
             OrdStatus = report.IsSetOrdStatus() ? report.OrdStatus.Value.ToString() : null,
             OrderId = report.IsSetOrderID() ? report.OrderID.Value : null,
             ExecId = report.IsSetExecID() ? report.ExecID.Value : null,
-            Text = report.IsSetText() ? report.Text.Value : null
+            Text = report.IsSetText() ? report.Text.Value : null,
+            ExposureAfter = report.IsSetField(FixCustomTags.SymbolExposure)
+                ? report.GetDecimal(FixCustomTags.SymbolExposure)
+                : null,
+            PositionAfter = report.IsSetField(FixCustomTags.SymbolPosition)
+                ? (long)report.GetDecimal(FixCustomTags.SymbolPosition)
+                : null
         };
+
+        if (result.Symbol is not null && result.ExposureAfter is not null && result.PositionAfter is not null)
+        {
+            _portfolio[result.Symbol] = new PortfolioEntry(result.Symbol, result.ExposureAfter.Value, result.PositionAfter.Value);
+        }
 
         _logger.LogInformation("ExecutionReport recebido para {ClOrdId}: {Outcome}", clOrdId, outcome);
 

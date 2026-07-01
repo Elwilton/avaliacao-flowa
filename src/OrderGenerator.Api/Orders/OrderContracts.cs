@@ -21,6 +21,8 @@ public enum OrderOutcome
     Error
 }
 
+public sealed record PortfolioEntry(string Symbol, decimal Exposure, long Position);
+
 public sealed record OrderResult
 {
     public required OrderOutcome Outcome { get; init; }
@@ -34,5 +36,7 @@ public sealed record OrderResult
     public string? OrderId { get; init; }
     public string? ExecId { get; init; }
     public string? Text { get; init; }
+    public decimal? ExposureAfter { get; init; }
+    public long? PositionAfter { get; init; }
     public DateTimeOffset ReceivedAtUtc { get; init; } = DateTimeOffset.UtcNow;
 }
