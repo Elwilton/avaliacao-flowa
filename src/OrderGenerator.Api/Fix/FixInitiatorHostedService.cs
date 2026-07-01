@@ -27,6 +27,7 @@ public sealed class FixInitiatorHostedService : IHostedService
         _logger.LogInformation("Iniciando initiator FIX com config {Config}", _configPath);
 
         var settings = new SessionSettings(_configPath);
+        ApplyEnvironmentOverrides(settings);
         var storeFactory = new FileStoreFactory(settings);
         var logFactory = new FileLogFactory(settings);
 
@@ -35,6 +36,18 @@ public sealed class FixInitiatorHostedService : IHostedService
 
         _logger.LogInformation("Initiator FIX iniciado. Conectando ao OrderAccumulator.");
         return Task.CompletedTask;
+    }
+
+    private static void ApplyEnvironmentOverrides(SessionSettings settings)
+    {
+        var host = Environment.GetEnvironmentVariable("FIX_CONNECT_HOST");
+        var port = Environment.GetEnvironmentVariable("FIX_CONNECT_PORT");
+        foreach (var sessionId in settings.GetSessions())
+        {
+            var session = settings.Get(sessionId);
+            if (!string.IsNullOrWhiteSpace(host)) session.SetString("SocketConnectHost", host);
+            if (!string.IsNullOrWhiteSpace(port)) session.SetString("SocketConnectPort", port);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

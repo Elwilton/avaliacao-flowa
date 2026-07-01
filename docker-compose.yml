@@ -1,0 +1,45 @@
+# Sobe os três serviços (acumulador, API e frontend) de uma vez:
+#   docker compose up --build
+# Acesse o app em http://localhost:8080
+services:
+  accumulator:
+    build:
+      context: .
+      dockerfile: src/OrderAccumulator/Dockerfile
+    environment:
+      - FIX_ACCEPT_HOST=0.0.0.0
+      - FIX_ACCEPT_PORT=5001
+    expose:
+      - "5001"
+    networks:
+      - fixnet
+
+  api:
+    build:
+      context: .
+      dockerfile: src/OrderGenerator.Api/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - FIX_CONNECT_HOST=accumulator
+      - FIX_CONNECT_PORT=5001
+    expose:
+      - "8080"
+    depends_on:
+      - accumulator
+    networks:
+      - fixnet
+
+  web:
+    build:
+      context: .
+      dockerfile: src/order-generator-web/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - fixnet
+
+networks:
+  fixnet:
+    driver: bridge

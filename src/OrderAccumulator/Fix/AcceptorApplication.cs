@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using OrderAccumulator.Domain;
 using QuickFix;
@@ -9,6 +10,13 @@ namespace OrderAccumulator.Fix;
 
 public sealed class AcceptorApplication : MessageCracker, IApplication
 {
+    private static readonly NumberFormatInfo BrazilianFormat = new()
+    {
+        NumberGroupSeparator = ".",
+        NumberDecimalSeparator = ",",
+        NumberGroupSizes = [3],
+    };
+
     private readonly ExposureService _exposure;
     private readonly ILogger<AcceptorApplication> _logger;
     private long _execIdSequence;
@@ -71,7 +79,7 @@ public sealed class AcceptorApplication : MessageCracker, IApplication
                 "REJEITADA {ClOrdId} {Side} {Qty}x{Symbol}@{Price} | exposição projetada {Projected:N2} excede limite {Limit:N2}",
                 clOrdId, side, quantity, symbol, price, result.ProjectedExposure, ExposureService.LimitPerSymbol);
             SendRejection(sessionID, order, OrdRejReason.ORDER_EXCEEDS_LIMIT,
-                $"Exposição projetada {result.ProjectedExposure:N2} excede o limite de {ExposureService.LimitPerSymbol:N2}",
+                $"Exposição projetada {result.ProjectedExposure.ToString("N2", BrazilianFormat)} excede o limite de {ExposureService.LimitPerSymbol.ToString("N2", BrazilianFormat)}",
                 result.ExposureAfter, result.PositionAfter);
         }
     }

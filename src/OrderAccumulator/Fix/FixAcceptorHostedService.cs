@@ -28,6 +28,7 @@ public sealed class FixAcceptorHostedService : IHostedService
         _logger.LogInformation("Iniciando acceptor FIX com config {Config}", _configPath);
 
         var settings = new SessionSettings(_configPath);
+        ApplyEnvironmentOverrides(settings);
         var storeFactory = new FileStoreFactory(settings);
         var logFactory = new FileLogFactory(settings);
 
@@ -36,6 +37,18 @@ public sealed class FixAcceptorHostedService : IHostedService
 
         _logger.LogInformation("Acceptor FIX no ar. Aguardando conexões do OrderGenerator.");
         return Task.CompletedTask;
+    }
+
+    private static void ApplyEnvironmentOverrides(SessionSettings settings)
+    {
+        var host = Environment.GetEnvironmentVariable("FIX_ACCEPT_HOST");
+        var port = Environment.GetEnvironmentVariable("FIX_ACCEPT_PORT");
+        foreach (var sessionId in settings.GetSessions())
+        {
+            var session = settings.Get(sessionId);
+            if (!string.IsNullOrWhiteSpace(host)) session.SetString("SocketAcceptHost", host);
+            if (!string.IsNullOrWhiteSpace(port)) session.SetString("SocketAcceptPort", port);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

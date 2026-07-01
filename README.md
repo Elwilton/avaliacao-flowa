@@ -127,12 +127,42 @@ avaliacao-flowa/
 
 ## Pré-requisitos
 
-- **.NET SDK 10**
-- **Node.js 18+** e **npm** (testado com Node 20)
+- **Com Docker (recomendado):** apenas **Docker** + **Docker Compose v2** (comando `docker compose`).
+- **Sem Docker (execução local):** **.NET SDK 10** e **Node.js 18+** com **npm** (testado com Node 20).
 
 ---
 
 ## Como executar
+
+### Opção 1 — Docker (recomendado)
+
+Sobe os **três serviços** (acumulador, API e frontend) com um comando, sem instalar
+.NET ou Node na máquina.
+
+```bash
+# 1. Clonar o repositório
+git clone https://github.com/Elwilton/avaliacao-flowa
+cd avaliacao-flowa
+
+# 2. Subir tudo (builda as imagens na primeira vez)
+docker compose up --build
+
+# 3. Acessar a aplicação
+#    http://localhost:8080
+
+# 4. Encerrar (em outro terminal, ou Ctrl+C e depois:)
+docker compose down
+```
+
+Pronto — abra **http://localhost:8080**, preencha o formulário e envie. O `ExecutionReport`
+aparece ao lado e a carteira por símbolo é atualizada.
+
+> No Docker, tudo passa pela **porta 8080** (o Nginx serve o front e faz *proxy* de
+> `/api/*` para a API). O estado é em memória, então cada `up` começa com a carteira zerada.
+
+Detalhes de como o Compose orquestra os serviços em [Como funciona o Compose](#como-funciona-o-compose).
+
+### Opção 2 — Execução local (sem Docker)
 
 Abra **três terminais** na raiz do projeto. Suba o acumulador primeiro (ele é o *acceptor*).
 
@@ -163,6 +193,8 @@ aparece ao lado e a carteira por símbolo é atualizada.
 ---
 
 ## Testando a API diretamente
+
+> Base URL: **`http://localhost:5189`** (execução local) ou **`http://localhost:8080`** (Docker).
 
 ```bash
 # Ordem aceita → ExecType "0" (New)
@@ -244,6 +276,17 @@ curl http://localhost:5189/api/portfolio
 
 ---
 
-## Próximos passos
+## Como funciona o Compose
 
-- **Docker** — empacotar os três serviços (acumulador, API e frontend) para subida única.
+Os três serviços sobem numa rede interna (`fixnet`); apenas o `web` é publicado no host.
+
+- **accumulator** — acceptor FIX; ouve na porta `5001` da rede interna (`FIX_ACCEPT_HOST=0.0.0.0`).
+- **api** — initiator FIX + API; conecta ao acumulador pelo nome de serviço (`FIX_CONNECT_HOST=accumulator`). Não é publicada no host — só é alcançada via Nginx.
+- **web** — build estático do React servido por **Nginx**, publicado em `localhost:8080`. O Nginx faz *proxy* de `/api/*` para a `api` (mesma origem, sem CORS).
+
+Detalhes de implementação:
+
+- Host/porta das sessões FIX são injetados por **variáveis de ambiente** no `docker-compose.yml`, sem duplicar os arquivos de configuração.
+- O initiator **reconecta sozinho** até o acumulador ficar disponível, então a ordem de subida não importa.
+- A API é publicada **self-contained** (empacota o runtime), e as imagens .NET rodam em globalização invariante — o que também garante decimais com `.` no fio FIX.
+- Se a porta **8080** já estiver em uso na máquina, ajuste o mapeamento `ports` do serviço `web` no `docker-compose.yml`.
